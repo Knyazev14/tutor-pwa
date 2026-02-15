@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -10,6 +9,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       workbox: {
         globPatterns: ["**/*{html,css,js,ico,png,svg}"],
+        navigateFallback: null,
       },
       manifest: {
         theme_color: "#8936FF",
@@ -34,8 +34,33 @@ export default defineConfig({
         lang: "ru",
         name: "sTALKER",
         short_name: "ST",
+        description: "PWA приложение для репетитора",
+        start_url: "/tutor-pwa/",
+        scope: "/tutor-pwa/"
       },
     }),
   ],
   base: "/tutor-pwa/",
+  server: {
+    port: 5173,
+    open: true,
+    proxy: {
+      // Прокси для всех запросов к целевому сайту
+      '/api': {
+        target: 'http://kattylrj.beget.tech',
+        changeOrigin: true,
+      
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            proxyReq.setHeader('Origin', 'http://kattylrj.beget.tech');
+            proxyReq.setHeader('Referer', 'http://kattylrj.beget.tech/');
+          });
+        }
+      },
+    }
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+  },
 });
