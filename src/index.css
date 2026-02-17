@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  /* Primary colors */
+  --color-primary-50: #f3e9ff;
+  --color-primary-100: #e7d3ff;
+  --color-primary-200: #d0a7ff;
+  --color-primary-300: #b87aff;
+  --color-primary-400: #a14eff;
+  --color-primary-500: #8936FF;
+  --color-primary-600: #6e2bcc;
+  --color-primary-700: #522099;
+  --color-primary-800: #371666;
+  --color-primary-900: #1b0b33;
+  
+  /* Secondary colors */
+  --color-secondary-500: #2EC6FE;
+  
+  /* Semantic colors */
+  --color-success: #2ecc71;
+  --color-danger: #ff4444;
+  --color-warning: #ffbb33;
+  --color-info: #3498db;
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-2 bg-[--color-primary-500] text-white rounded-lg hover:bg-[--color-primary-600] transition-all duration-300 transform hover:scale-105;
+  }
+  
+  .btn-outlined {
+    @apply px-6 py-2 border-2 border-[--color-primary-500] text-[--color-primary-500] rounded-lg hover:bg-[--color-primary-500] hover:text-white transition-all duration-300;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-6;
+  }
+}

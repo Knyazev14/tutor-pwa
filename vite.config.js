@@ -44,20 +44,6 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
-    proxy: {
-      // Прокси для всех запросов к целевому сайту
-      '/api': {
-        target: 'http://kattylrj.beget.tech',
-        changeOrigin: true,
-      
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            proxyReq.setHeader('Origin', 'http://kattylrj.beget.tech');
-            proxyReq.setHeader('Referer', 'http://kattylrj.beget.tech/');
-          });
-        }
-      },
-    }
   },
   build: {
     outDir: 'dist',
