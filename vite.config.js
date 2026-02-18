@@ -18,13 +18,13 @@ export default defineConfig({
           {
             purpose: "maskable",
             sizes: "512x512",
-            src: "stalker.png",
+            src: "logo.png",
             type: "image/png",
           },
           {
             purpose: "any",
             sizes: "512x512",
-            src: "stalker.png",
+            src: "logo.png",
             type: "image/png",
           },
         ],
@@ -32,9 +32,9 @@ export default defineConfig({
         display: "standalone",
         dir: "auto",
         lang: "ru",
-        name: "sTALKER",
-        short_name: "ST",
-        description: "PWA приложение для репетитора",
+        name: "TutorApp",
+        short_name: "TutorApp",
+        description: "TutorApp приложение для репетитора",
         start_url: "/tutor-pwa/",
         scope: "/tutor-pwa/"
       },

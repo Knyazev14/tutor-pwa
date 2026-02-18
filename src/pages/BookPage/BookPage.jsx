@@ -2,16 +2,26 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import BookingCard from '../../components/ui/BookingCard';
+import BookingModal from '../../components/ui/BookingModal';
 import Button from '../../components/ui/Button';
 import Container from '../../components/ui/Container';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
+const API_BASE = 'https://cors-anywhere.herokuapp.com/http://kattylrj.beget.tech/api/v1/book';
+
 function BookPage() {
   const [books, setBooks] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('all'); // all, active, inactive, online, offline
+  const [filter, setFilter] = useState('all');
+  
+  // Состояния для модалки
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBooking, setEditingBooking] = useState(null);
   
   const { isAuthenticated, logout, authHeader } = useAuth();
   const navigate = useNavigate();
@@ -22,18 +32,21 @@ function BookPage() {
       return;
     }
     fetchBooks();
+    fetchStudents();
+    fetchCategories();
   }, [isAuthenticated]);
 
   useEffect(() => {
     filterBooks();
   }, [books, filter]);
 
+  // API запросы
   const fetchBooks = async () => {
     setLoading(true);
     setError('');
     
     try {
-      const response = await fetch('https://cors-anywhere.herokuapp.com/http://kattylrj.beget.tech/api/calendar/get', {
+      const response = await fetch(`${API_BASE}/get`, {
         headers: { ...authHeader }
       });
 
@@ -46,9 +59,8 @@ function BookPage() {
         throw new Error('Ошибка загрузки данных');
       }
 
-      const jsonData = await response.json();
-      const booksData = jsonData.books || jsonData.data || jsonData;
-      setBooks(Array.isArray(booksData) ? booksData : []);
+      const data = await response.json();
+      setBooks(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -56,10 +68,153 @@ function BookPage() {
     }
   };
 
+  const fetchStudents = async () => {
+    try {
+      const response = await fetch('https://cors-anywhere.herokuapp.com/http://kattylrj.beget.tech/api/v1/student/get', {
+        headers: { ...authHeader }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStudents(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки учеников:', err);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('https://cors-anywhere.herokuapp.com/http://kattylrj.beget.tech/api/v1/category/get', {
+        headers: { ...authHeader }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки категорий:', err);
+    }
+  };
+
+  const createBooking = async (bookingData) => {
+    setModalLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader
+        },
+        body: JSON.stringify(bookingData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при создании брони');
+      }
+
+      const result = await response.json();
+      await fetchBooks(); // Обновляем список
+      setIsModalOpen(false);
+      alert('✅ Бронь успешно создана');
+    } catch (err) {
+      alert('❌ Ошибка: ' + err.message);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const updateBooking = async (id, bookingData) => {
+    setModalLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/update/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader
+        },
+        body: JSON.stringify(bookingData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при обновлении брони');
+      }
+
+      await fetchBooks(); // Обновляем список
+      setIsModalOpen(false);
+      setEditingBooking(null);
+    } catch (err) {
+      alert('❌ Ошибка: ' + err.message);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const deleteBooking = async (id) => {
+    if (!window.confirm('Вы уверены, что хотите удалить эту бронь?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/delete/${id}`, {
+        method: 'DELETE',
+        headers: { ...authHeader }
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при удалении брони');
+      }
+
+      setBooks(prev => prev.filter(book => book.id !== id));
+      alert('✅ Бронь удалена');
+    } catch (err) {
+      alert('❌ Ошибка: ' + err.message);
+    }
+  };
+
+  const handleStatusChange = async (id, newStatus) => {
+    const booking = books.find(b => b.id === id);
+    if (!booking) return;
+
+    await updateBooking(id, {
+      ...booking,
+      bookStatus: newStatus
+    });
+  };
+
+  const handleEdit = (booking) => {
+    setEditingBooking(booking);
+    setIsModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setEditingBooking(null);
+    setIsModalOpen(true);
+  };
+
+  const handleModalSubmit = (formData) => {
+    const bookingData = {
+      timeFrom: formData.timeFrom,
+      timeTo: formData.timeTo,
+      startDate: formData.startDate,
+      endDate: formData.endDate || null,
+      bookStatus: formData.bookStatus,
+      lessonFormat: formData.lessonFormat,
+      studentId: parseInt(formData.studentId),
+      lessonCategoryId: parseInt(formData.lessonCategoryId)
+    };
+
+    if (editingBooking) {
+      updateBooking(editingBooking.id, bookingData);
+    } else {
+      createBooking(bookingData);
+    }
+  };
+
   const filterBooks = () => {
     let filtered = [...books];
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     switch (filter) {
       case 'active':
@@ -74,12 +229,8 @@ function BookPage() {
         break;
       case 'inactive':
         filtered = filtered.filter(book => {
-          const start = new Date(book.startDate);
-          if (book.endDate) {
-            const end = new Date(book.endDate);
-            return end < today;
-          }
-          return false;
+          const end = book.endDate ? new Date(book.endDate) : null;
+          return end && end < today;
         });
         break;
       case 'online':
@@ -93,31 +244,6 @@ function BookPage() {
     }
     
     setFilteredBooks(filtered);
-  };
-
-  const handleStatusChange = async (id, newStatus) => {
-    // Здесь можно добавить API вызов для изменения статуса
-    console.log('Change status:', id, newStatus);
-    
-    // Оптимистичное обновление UI
-    setBooks(prevBooks =>
-      prevBooks.map(book =>
-        book.id === id ? { ...book, bookStatus: newStatus } : book
-      )
-    );
-  };
-
-  const handleEdit = (booking) => {
-    console.log('Edit booking:', booking);
-    // Навигация на страницу редактирования или открытие модалки
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Вы уверены, что хотите удалить эту бронь?')) {
-      console.log('Delete booking:', id);
-      // Здесь API вызов для удаления
-      setBooks(prevBooks => prevBooks.filter(book => book.id !== id));
-    }
   };
 
   const getFilterButtonClass = (filterValue) => {
@@ -145,6 +271,14 @@ function BookPage() {
           </h1>
           
           <div className="flex gap-2">
+            <Button
+              onClick={handleCreate}
+              variant="success"
+              icon={<span>➕</span>}
+              size="sm"
+            >
+              Новая бронь
+            </Button>
             <Button
               onClick={fetchBooks}
               disabled={loading}
@@ -207,7 +341,7 @@ function BookPage() {
                 booking={booking}
                 onStatusChange={handleStatusChange}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
+                onDelete={deleteBooking}
               />
             ))}
           </div>
@@ -217,10 +351,41 @@ function BookPage() {
               <p className="text-gray-500 text-lg">
                 {books.length === 0 ? '📭 Нет данных о бронях' : '🔍 Нет броней по выбранному фильтру'}
               </p>
+              {books.length === 0 && (
+                <Button
+                  onClick={handleCreate}
+                  variant="success"
+                  className="mt-4"
+                >
+                  ➕ Создать первую бронь
+                </Button>
+              )}
             </div>
           )
         )}
       </div>
+
+      {/* Модальное окно */}
+      <BookingModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingBooking(null);
+        }}
+        onSubmit={handleModalSubmit}
+        booking={editingBooking}
+        students={students}
+        categories={categories}
+      />
+
+      {/* Лоадер для модалки */}
+      {modalLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg">
+            <LoadingSpinner />
+          </div>
+        </div>
+      )}
     </Container>
   );
 }

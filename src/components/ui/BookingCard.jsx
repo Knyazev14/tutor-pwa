@@ -154,7 +154,7 @@ function BookingCard({ booking, onStatusChange, onEdit, onDelete }) {
 
         {/* Действия (показываются при раскрытии) */}
         {isExpanded && (
-          <div className="mt-4 pt-3 border-t border-gray-200 flex gap-2">
+          <div className="mt-4 pt-3 border-t border-gray-200 flex gap-2 flex-wrap">
             {onStatusChange && (
               <button
                 onClick={() => onStatusChange(id, !bookStatus)}
