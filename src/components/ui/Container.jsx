@@ -10,7 +10,7 @@ function Container({ children, className = '', size = 'default', ...props }) {
 
   return (
     <div
-      className={`container mx-auto px-4 py-6 ${sizes[size]} ${className}`}
+      className={`container mx-auto px-1 py-1 ${sizes[size]} ${className}`}
       {...props}
     >
       {children}

@@ -17,13 +17,13 @@ export default defineConfig({
         icons: [
           {
             purpose: "maskable",
-            sizes: "512x512",
+            sizes: "403x579",
             src: "logo.png",
             type: "image/png",
           },
           {
             purpose: "any",
-            sizes: "512x512",
+            sizes: "403x579",
             src: "logo.png",
             type: "image/png",
           },

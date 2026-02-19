@@ -8,7 +8,7 @@ function LoadingSpinner({ size = 'md', fullScreen = false }) {
   };
 
   const spinner = (
-    <div className="flex justify-center items-center">
+    <div className="flex justify-center items-center bg-sky-100/70">
       <div className={`${sizes[size]} border-4 border-primary-200 border-t-primary-500 rounded-full animate-spin`}></div>
     </div>
   );

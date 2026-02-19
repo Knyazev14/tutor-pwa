@@ -4,6 +4,7 @@ import Navigation from './components/navigation/Navigation';
 import HomePage from "./pages/HomePage/HomePage";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import BookPage from "./pages/BookPage/BookPage";
+import LessonPage from './pages/LessonPage/LessonPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/tutor-pwa" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/books" element={<BookPage />} />
+            <Route path="/lessons" element={<LessonPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
