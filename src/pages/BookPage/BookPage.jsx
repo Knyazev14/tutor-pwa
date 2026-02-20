@@ -7,7 +7,7 @@ import Button from '../../components/ui/Button';
 import Container from '../../components/ui/Container';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
-const API_BASE = 'https://cors-anywhere.herokuapp.com/http://kattylrj.beget.tech/api/v1/book';
+const API_BASE = 'http://kattylrj.beget.tech/api/v1/book';
 
 function BookPage() {
   const [books, setBooks] = useState([]);

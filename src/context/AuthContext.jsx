@@ -1,60 +1,45 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import Auth from '../api/auth/api.auth.js';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
+export const AuthProvider = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('jwt_token');
-    if (savedToken) {
-      setToken(savedToken);
-      try {
-        // Декодируем токен (payload - вторая часть)
-        const payload = JSON.parse(atob(savedToken.split('.')[1]));
-        setUser(payload);
-      } catch (e) {
-        console.error('Ошибка декодирования токена');
-      }
-    }
+    // Проверяем авторизацию при загрузке
+    setIsAuthenticated(Auth.isAuthenticated());
     setLoading(false);
   }, []);
 
-  const login = (newToken) => {
-    localStorage.setItem('jwt_token', newToken);
-    setToken(newToken);
-    try {
-      const payload = JSON.parse(atob(newToken.split('.')[1]));
-      setUser(payload);
-    } catch (e) {
-      console.error('Ошибка декодирования токена');
-    }
+  const login = (token) => {
+    localStorage.setItem('token', token);
+    setIsAuthenticated(true);
   };
 
   const logout = () => {
-    localStorage.removeItem('jwt_token');
-    setToken(null);
-    setUser(null);
+    Auth.logout();
+    setIsAuthenticated(false);
   };
 
-  // Хелпер для заголовков с токеном
-  const authHeader = token ? { 'Authorization': `Bearer ${token}` } : {};
+  // authHeader больше не нужен, так как интерцептор сам добавляет токен!
+
+  if (loading) {
+    return <div>Загрузка...</div>;
+  }
 
   return (
-    <AuthContext.Provider value={{
-      token,
-      user,
-      loading,
-      login,
-      logout,
-      authHeader,
-      isAuthenticated: !!token
-    }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

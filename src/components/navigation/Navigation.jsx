@@ -1,4 +1,3 @@
-import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Link from '../ui/Link';
 import Button from '../ui/Button';
@@ -13,7 +12,7 @@ function Navigation() {
         <div className="flex items-center justify-between flex-wrap py-3">
           {/* Logo */}
           <Link 
-            to="/tutor-pwa" 
+            to="/" 
             variant="nav" 
             className="text-xl font-bold hover:scale-105 transition-transform duration-300"
           >

@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import LessonModal from '../../components/ui/LessonModal';
 
-const API_BASE = 'https://cors-anywhere.herokuapp.com/http://kattylrj.beget.tech/api/v1';
+const API_BASE = 'http://kattylrj.beget.tech/api/v1';
 
 function CalendarComponent() {
   const [events, setEvents] = useState([]);
