@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Базовый URL из .env
-const API_BASE = import.meta.env.VITE_API_URL || 'http://kattylrj.beget.tech/';
+const API_BASE = import.meta.env.VITE_API_URL
 
 // Создаем экземпляр axios с базовыми настройками
 export const instance = axios.create({

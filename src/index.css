@@ -42,3 +42,8 @@
     @apply bg-white rounded-xl shadow-lg p-6;
   }
 }
+
+.fc-header-toolbar{
+  display: flex;
+  flex-wrap: wrap;
+}

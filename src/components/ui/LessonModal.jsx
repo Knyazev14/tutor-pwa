@@ -1,78 +1,136 @@
+// src/components/ui/LessonModal.jsx
 import React, { useState, useEffect } from 'react';
 
 function LessonModal({ isOpen, onClose, onSubmit, lesson, students, categories, statuses }) {
   const [formData, setFormData] = useState({
-    date: '',
+    name: '',
+    startDate: '',
+    endDate: '',
     timeFrom: '',
     timeTo: '',
     price: '',
-    comment: '',
     studentId: '',
     categoryId: '',
-    statusId: ''
+    statusId: '',
+    lessonFormat: 'offline'
   });
 
   useEffect(() => {
     if (lesson) {
-      // Для редактирования извлекаем данные из lesson
-      let date = lesson.date || '';
-      let timeFrom = lesson.timeFrom || '';
-      let timeTo = lesson.timeTo || '';
+      console.log('Setting lesson data:', lesson);
       
-      // Если есть startDate в формате "2026-01-17 12:00:00"
-      if (lesson.startDate && !date) {
-        const [datePart, timePart] = lesson.startDate.split(' ');
-        date = datePart || '';
-        timeFrom = timePart ? timePart.substring(0, 5) : '';
+      // Если есть startDate в формате "2026-02-23 10:00"
+      let startDate = '';
+      let endDate = '';
+      let timeFrom = '';
+      let timeTo = '';
+      
+      if (lesson.startDate) {
+        if (lesson.startDate.includes('T')) {
+          // Формат "2026-02-23T10:00"
+          const [datePart, timePart] = lesson.startDate.split('T');
+          startDate = datePart;
+          timeFrom = timePart;
+        } else if (lesson.startDate.includes(' ')) {
+          // Формат "2026-02-23 10:00"
+          const [datePart, timePart] = lesson.startDate.split(' ');
+          startDate = datePart;
+          timeFrom = timePart.substring(0, 5);
+        } else {
+          startDate = lesson.startDate;
+        }
       }
       
-      // Если есть endDate в формате "2026-01-17 12:40:00"
-      if (lesson.endDate && !timeTo) {
-        const [, timePart] = lesson.endDate.split(' ');
-        timeTo = timePart ? timePart.substring(0, 5) : '';
+      if (lesson.endDate) {
+        if (lesson.endDate.includes('T')) {
+          // Формат "2026-02-23T10:45"
+          const [datePart, timePart] = lesson.endDate.split('T');
+          endDate = datePart;
+          timeTo = timePart;
+        } else if (lesson.endDate.includes(' ')) {
+          // Формат "2026-02-23 10:45"
+          const [datePart, timePart] = lesson.endDate.split(' ');
+          endDate = datePart;
+          timeTo = timePart.substring(0, 5);
+        } else {
+          endDate = lesson.endDate;
+        }
       }
 
       setFormData({
-        date: date,
-        timeFrom: timeFrom,
-        timeTo: timeTo,
+        name: lesson.name || '',
+        startDate: startDate || lesson.date || '',
+        endDate: endDate || lesson.endDatePart || '',
+        timeFrom: timeFrom || lesson.timeFrom || '',
+        timeTo: timeTo || lesson.timeTo || '',
         price: lesson.price || '',
-        comment: lesson.comment || '',
         studentId: lesson.student?.id || '',
         categoryId: lesson.category?.id || '',
-        statusId: lesson.status?.id || ''
+        statusId: lesson.lessonStatus?.id || lesson.status?.id || '',
+        lessonFormat: lesson.lessonFormat || 'offline'
       });
     } else {
       setFormData({
-        date: '',
+        name: '',
+        startDate: '',
+        endDate: '',
         timeFrom: '',
         timeTo: '',
         price: '',
-        comment: '',
         studentId: '',
         categoryId: '',
-        statusId: ''
+        statusId: '',
+        lessonFormat: 'offline'
       });
     }
   }, [lesson]);
+
+  // Автоматическое формирование названия при выборе ученика и предмета
+  useEffect(() => {
+    if (isOpen && formData.studentId && formData.categoryId && !formData.name) {
+      const selectedStudent = students?.find(s => s.id === parseInt(formData.studentId));
+      const selectedCategory = categories?.find(c => c.id === parseInt(formData.categoryId));
+      
+      if (selectedStudent && selectedCategory) {
+        setFormData(prev => ({
+          ...prev,
+          name: `${selectedStudent.name} - ${selectedCategory.name}`
+        }));
+      }
+    }
+  }, [isOpen, formData.studentId, formData.categoryId, formData.name, students, categories]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Подготавливаем данные для отправки
+    // Формируем startDate и endDate в формате для сервера
+    const startDateTime = formData.startDate && formData.timeFrom 
+      ? `${formData.startDate} ${formData.timeFrom}:00` 
+      : null;
+    
+    const endDateTime = formData.endDate && formData.timeTo 
+      ? `${formData.endDate} ${formData.timeTo}:00` 
+      : null;
+
     const submitData = {
-      date: formData.date,
-      timeFrom: formData.timeFrom,
-      timeTo: formData.timeTo,
+      name: formData.name,
+      startDate: startDateTime,
+      endDate: endDateTime,
       price: formData.price ? parseInt(formData.price) : 0,
-      comment: formData.comment || null,
       studentId: parseInt(formData.studentId),
       categoryId: parseInt(formData.categoryId),
-      statusId: parseInt(formData.statusId)
+      statusId: parseInt(formData.statusId),
+      lessonFormat: formData.lessonFormat
     };
+
+    // Если есть bookId из брони, добавляем его
+    if (lesson?.book?.id) {
+      submitData.bookId = lesson.book.id;
+    }
     
+    console.log('Submitting lesson data:', submitData);
     onSubmit(submitData);
   };
 
@@ -85,8 +143,8 @@ function LessonModal({ isOpen, onClose, onSubmit, lesson, students, categories, 
   };
 
   return (
-    <div className="fixed inset-0 bg-sky-100/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-sky-100/70 flex items-start md:items-center justify-center z-50 p-4 overflow-y-auto overflow-x-hidden">
+      <div className="bg-white rounded-xl max-w-md w-full">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">
@@ -101,6 +159,22 @@ function LessonModal({ isOpen, onClose, onSubmit, lesson, students, categories, 
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Название урока */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                📝 Название урока *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Название урока"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
             {/* Ученик */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -137,7 +211,7 @@ function LessonModal({ isOpen, onClose, onSubmit, lesson, students, categories, 
                 <option value="">Выберите предмет</option>
                 {categories?.map(category => (
                   <option key={category.id} value={category.id}>
-                    {category.name} - {category.price}₽
+                    {category.name} - {category.price}р
                   </option>
                 ))}
               </select>
@@ -164,19 +238,67 @@ function LessonModal({ isOpen, onClose, onSubmit, lesson, students, categories, 
               </select>
             </div>
 
-            {/* Дата */}
+            {/* Формат занятия */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                📅 Дата *
+                🏫 Формат занятия
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="lessonFormat"
+                    value="offline"
+                    checked={formData.lessonFormat === 'offline'}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  🏫 Офлайн
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="lessonFormat"
+                    value="online"
+                    checked={formData.lessonFormat === 'online'}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  💻 Онлайн
+                </label>
+              </div>
+            </div>
+
+            {/* Дата начала */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                📅 Дата начала *
               </label>
               <input
                 type="date"
-                name="date"
-                value={formData.date}
+                name="startDate"
+                value={formData.startDate}
                 onChange={handleChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            {/* Дата завершения */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                📅 Дата завершения
+              </label>
+              <input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Оставьте пустым, если урок однодневный
+              </p>
             </div>
 
             {/* Время */}
@@ -222,24 +344,6 @@ function LessonModal({ isOpen, onClose, onSubmit, lesson, students, categories, 
                 min="0"
                 placeholder="Стоимость урока"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Статус оплаты выбирается в поле "Статус"
-              </p>
-            </div>
-
-            {/* Комментарий */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                📝 Комментарий
-              </label>
-              <textarea
-                name="comment"
-                value={formData.comment}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Дополнительная информация..."
               />
             </div>
 

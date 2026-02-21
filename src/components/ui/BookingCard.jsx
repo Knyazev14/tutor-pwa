@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { format, parse, isAfter, isBefore, addDays } from 'date-fns';
+import { useState } from 'react';
+import { format, isAfter } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
-function BookingCard({ booking, onStatusChange, onEdit, onDelete }) {
+function BookingCard({ booking, onEdit, onDelete }) {
   const [isExpanded, setIsExpanded] = useState(false);
   
   const {
@@ -155,15 +155,6 @@ function BookingCard({ booking, onStatusChange, onEdit, onDelete }) {
         {/* Действия (показываются при раскрытии) */}
         {isExpanded && (
           <div className="mt-4 pt-3 border-t border-gray-200 flex gap-2 flex-wrap">
-            {onStatusChange && (
-              <button
-                onClick={() => onStatusChange(id, !bookStatus)}
-                className="flex-1 py-2 px-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
-              >
-                {bookStatus ? '🔴 Приостановить' : '🟢 Активировать'}
-              </button>
-            )}
-            
             {onEdit && (
               <button
                 onClick={() => onEdit(booking)}

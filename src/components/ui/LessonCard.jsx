@@ -162,7 +162,7 @@ function LessonCard({ lesson, onEdit, onDelete, onStatusChange }) {
         <div className="flex items-center gap-1 text-sm">
           <span>💰</span>
           <span>
-            Цена: <span className="font-bold text-blue-600">{lesson.price || 0}₽</span>
+            Цена: <span className="font-bold text-blue-600">{lesson.price || 0}р</span>
             {getStatusSlug() === 'paid' && (
               <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
                 ✓ Оплачено

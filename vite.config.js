@@ -35,12 +35,12 @@ export default defineConfig({
         name: "TutorApp",
         short_name: "TutorApp",
         description: "TutorApp приложение для репетитора",
-        start_url: "/tutor-pwa/",
-        scope: "/tutor-pwa/"
+        start_url: "/tutor-pwa",
+        scope: "/tutor-pwa"
       },
     }),
   ],
-  base: "/tutor-pwa/",
+  base: "/tutor-pwa",
   server: {
     port: 5173,
     open: true,
