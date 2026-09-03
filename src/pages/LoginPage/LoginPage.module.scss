@@ -1,0 +1,80 @@
+.container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.error {
+  color: #ff4444;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #ffebee;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.form {
+  width: 100%;
+}
+
+.inputGroup {
+  margin-bottom: 15px;
+}
+
+.input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #8936FF;
+  }
+  
+  &:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+  }
+}
+
+.button {
+  width: 100%;
+  padding: 10px;
+  background: #8936FF;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  
+  &:hover:not(:disabled) {
+    background: darken(#8936FF, 10%);
+  }
+  
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+.linkContainer {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.link {
+  color: #8936FF;
+  text-decoration: none;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
