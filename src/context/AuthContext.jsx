@@ -27,11 +27,17 @@ export const AuthProvider = ({ children }) => {
         setError(null);
         const isValid = Auth.isAuthenticated();
         setIsAuthenticated(isValid);
+        
+        // Если токен невалиден, очищаем его
+        if (!isValid) {
+         console.log('не валид')
+        }
       } catch (err) {
         console.error('Auth check failed:', err);
         setIsAuthenticated(false);
         setError(err.message);
-        Auth.clearToken();
+        // Очищаем испорченный токен
+       console.log('Очищаем испорченный токен')
       } finally {
         setLoading(false);
       }

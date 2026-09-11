@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useStudents } from '../../hooks/useStudents';
@@ -8,34 +8,40 @@ import StudentModal from '../../components/ui/StudentModal';
 import Button from '../../components/ui/Button';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
+// Хелпер: ученик в архиве, если comment строго равен "0"
+const isArchived = (student) => String(student?.comment ?? '').trim() === '0';
+
 function StudentPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  
+
   // Используем хуки
-  const { 
-    students, 
-    loading, 
-    error, 
-    fetchStudents, 
-    createStudent, 
-    updateStudent, 
-    deleteStudent 
+  const {
+    students,
+    loading,
+    error,
+    fetchStudents,
+    createStudent,
+    updateStudent,
+    deleteStudent
   } = useStudents();
-  
-  const { 
-    searchQuery, 
-    setSearchQuery, 
-    sortBy, 
-    setSortBy, 
-    filteredStudents, 
-    stats 
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    setSortBy,
+    filteredStudents,
+    stats
   } = useStudentFilters(students);
-  
+
   // Состояния для модалки
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingStudent, setEditingStudent] = React.useState(null);
   const [modalLoading, setModalLoading] = React.useState(false);
+
+  // Режим отображения: "active" или "archive"
+  const [viewMode, setViewMode] = React.useState('active');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -44,6 +50,31 @@ function StudentPage() {
     }
     fetchStudents();
   }, [isAuthenticated, navigate, fetchStudents]);
+
+  // Разделяем учеников на активных и архивных
+  const activeStudents = useMemo(
+    () => filteredStudents.filter((s) => !isArchived(s)),
+    [filteredStudents]
+  );
+
+  const archivedStudents = useMemo(
+    () => filteredStudents.filter((s) => isArchived(s)),
+    [filteredStudents]
+  );
+
+  // То, что реально показываем
+  const visibleStudents = viewMode === 'archive' ? archivedStudents : activeStudents;
+
+  // Пересчёт статистики для активных учеников
+  const activeStats = useMemo(() => {
+    const list = students.filter((s) => !isArchived(s));
+    return {
+      total: list.length,
+      withBooks: list.filter((s) => (s.bookingsCount || 0) > 0).length,
+      withLessons: list.filter((s) => (s.lessonsCount || 0) > 0).length,
+      totalLessons: list.reduce((sum, s) => sum + (s.lessonsCount || 0), 0),
+    };
+  }, [students]);
 
   const handleCreate = () => {
     setEditingStudent(null);
@@ -83,7 +114,7 @@ function StudentPage() {
         await createStudent(studentData);
         alert('✅ Ученик успешно создан');
       }
-      
+
       setIsModalOpen(false);
       setEditingStudent(null);
     } catch (err) {
@@ -93,7 +124,7 @@ function StudentPage() {
     }
   };
 
-  if ((loading && !students.length)) {
+  if (loading && !students.length) {
     return <LoadingSpinner fullScreen />;
   }
 
@@ -102,21 +133,36 @@ function StudentPage() {
       {/* Заголовок и кнопки */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          👥 Ученики
+          {viewMode === 'archive' ? '📦 Архив учеников' : '👥 Ученики'}
           <span className="text-sm font-normal text-gray-500">
-            ({filteredStudents.length} из {students.length})
+            ({visibleStudents.length} из {viewMode === 'archive' ? archivedStudents.length : activeStudents.length})
           </span>
         </h1>
-        
-        <div className="flex gap-2">
+
+        <div className="flex flex-wrap gap-2">
+          {/* Переключатель Архив / Активные */}
           <Button
-            onClick={handleCreate}
-            variant="success"
-            icon={<span>➕</span>}
+            onClick={() => setViewMode(viewMode === 'archive' ? 'active' : 'archive')}
+            variant={viewMode === 'archive' ? 'primary' : 'secondary'}
+            icon={<span>{viewMode === 'archive' ? '👥' : '📦'}</span>}
             size="sm"
           >
-            Новый ученик
+            {viewMode === 'archive'
+              ? 'К активным'
+              : `Архив${archivedStudents.length ? ` (${archivedStudents.length})` : ''}`}
           </Button>
+
+          {viewMode === 'active' && (
+            <Button
+              onClick={handleCreate}
+              variant="success"
+              icon={<span>➕</span>}
+              size="sm"
+            >
+              Новый ученик
+            </Button>
+          )}
+
           <Button
             onClick={fetchStudents}
             disabled={loading}
@@ -129,25 +175,27 @@ function StudentPage() {
         </div>
       </div>
 
-      {/* Статистика */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="text-sm text-blue-600">Всего учеников</div>
-          <div className="text-2xl font-bold text-blue-700">{stats.total}</div>
+      {/* Статистика (показываем только для активных) */}
+      {viewMode === 'active' && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="text-sm text-blue-600">Всего учеников</div>
+            <div className="text-2xl font-bold text-blue-700">{activeStats.total}</div>
+          </div>
+          <div className="bg-green-50 p-4 rounded-lg">
+            <div className="text-sm text-green-600">С бронями</div>
+            <div className="text-2xl font-bold text-green-700">{activeStats.withBooks}</div>
+          </div>
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="text-sm text-purple-600">С уроками</div>
+            <div className="text-2xl font-bold text-purple-700">{activeStats.withLessons}</div>
+          </div>
+          <div className="bg-orange-50 p-4 rounded-lg">
+            <div className="text-sm text-orange-600">Всего уроков</div>
+            <div className="text-2xl font-bold text-orange-700">{activeStats.totalLessons}</div>
+          </div>
         </div>
-        <div className="bg-green-50 p-4 rounded-lg">
-          <div className="text-sm text-green-600">С бронями</div>
-          <div className="text-2xl font-bold text-green-700">{stats.withBooks}</div>
-        </div>
-        <div className="bg-purple-50 p-4 rounded-lg">
-          <div className="text-sm text-purple-600">С уроками</div>
-          <div className="text-2xl font-bold text-purple-700">{stats.withLessons}</div>
-        </div>
-        <div className="bg-orange-50 p-4 rounded-lg">
-          <div className="text-sm text-orange-600">Всего уроков</div>
-          <div className="text-2xl font-bold text-orange-700">{stats.totalLessons}</div>
-        </div>
-      </div>
+      )}
 
       {/* Поиск и сортировка */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -181,9 +229,9 @@ function StudentPage() {
       )}
 
       {/* Список студентов */}
-      {filteredStudents.length > 0 ? (
+      {visibleStudents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredStudents.map((student) => (
+          {visibleStudents.map((student) => (
             <StudentCard
               key={student.id}
               student={student}
@@ -196,9 +244,13 @@ function StudentPage() {
         !loading && (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
             <p className="text-gray-500 text-lg">
-              {students.length === 0 ? '📭 Нет данных об учениках' : '🔍 Нет учеников по вашему запросу'}
+              {viewMode === 'archive'
+                ? '📦 Архив пуст'
+                : students.length === 0
+                  ? '📭 Нет данных об учениках'
+                  : '🔍 Нет учеников по вашему запросу'}
             </p>
-            {students.length === 0 && (
+            {viewMode === 'active' && activeStudents.length === 0 && (
               <Button
                 onClick={handleCreate}
                 variant="success"
